@@ -5,34 +5,23 @@
 #include "objreader.h"
 class DrawObject : public ConsoleDrawer{
 private:
-
     std::vector<Linalg::Vec3> vertexNormals;
     std::vector<Linalg::Vec3> transformedNormals;
 
-    void processRaster(int xp, int yp,
-     const Linalg::Vec3& lambda, iVec idxes);
-    
-    void resetBuffers();
+    void resetBuffers() override;
 
-    void rasterizeTriangle(iVec poly, const std::vector<Linalg::Vec3>&);
+    Linalg::Vec3 calculateNormal(const iVec& poly, const Linalg::Vec3& lambda) override;
+    void transformVertices(const Linalg::Mat4& totalMatrix,
+         const Linalg::Mat4& modelMatrix, const Linalg::Mat3& normalMatrix);
 public:
-    DrawObject() : ConsoleDrawer(){
-        Object3d reader{"f16.obj"};
+    DrawObject(int width, int height, const char* filename) : ConsoleDrawer(width, height){
+        Object3d reader{filename};
         vertexVector = reader.vertices;
         polygons = reader.polygons;
         vertexNormals = reader.vertexNormals;
-        for (auto& v : polygons){
-            std::cout << v[0] << " " << v[1] << " " << v[2] << "\n";
-        }
     }
 
-
-
-    void drawLoop();
-
-
-
-
+    void drawLoop() override;
 };
 
 #endif

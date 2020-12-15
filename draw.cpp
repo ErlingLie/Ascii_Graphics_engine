@@ -2,14 +2,13 @@
 #include "linalg.h"
 #include <chrono>
 
-#include "objreader.h"
 
 using namespace Linalg;
 
 
-ConsoleDrawer::ConsoleDrawer():
-screenWidth{200},
-screenHeight{100},
+ConsoleDrawer::ConsoleDrawer(int width, int height):
+screenWidth{width},
+screenHeight{height},
 screenBuffer{new wchar_t[screenHeight*screenWidth]},
 zBuffer{new double[screenHeight*screenWidth]},
 hConsole{CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, nullptr, CONSOLE_TEXTMODE_BUFFER, nullptr)},
@@ -41,9 +40,6 @@ ks{1-kd}
     polygons = std::vector<iVec>{iVec{0, 3, 2}, iVec{0, 1, 3},
                                     iVec{2, 3, 4}, iVec{0, 2, 4},
                                     iVec{1, 4, 3}, iVec{0, 4, 1}};
-        // polygons = std::vector<iVec>{iVec{0, 2, 3}, iVec{0, 3, 1},
-        //                             iVec{2, 4, 3}, iVec{0, 4, 2},
-        //                             iVec{1, 3, 4}, iVec{0, 1, 4}};
     lightDirection.normalize();
 }
 
@@ -54,20 +50,32 @@ void ConsoleDrawer::resetBuffers(){
         zBuffer[i] = 100.0;
     }
     modelPositions = std::vector<Vec4>{};
+    screenVertices = std::vector<Vec3>{};
 }
 
-Vec3 ConsoleDrawer::makeLine(Vec3 a, Vec3 b){
+Vec3 ConsoleDrawer::makeLine(const Vec3& a, const Vec3& b){
     Vec3 diff{ b[1] - a[1], a[0] - b[0], 0};
     diff[2] = -diff[0]*a[0] - diff[1]*a[1];
     return diff;
 }
 
+Linalg::Vec3 ConsoleDrawer::calculateNormal(const iVec& poly, const Linalg::Vec3& lambda){
+    Vec3 p0 = modelPositions[poly[0]];
+    Vec3 p1 = modelPositions[poly[1]];
+    Vec3 p2 = modelPositions[poly[2]];
+    Vec3 normalVec = normal(p1-p0, p2-p0);
+    normalVec.normalize();
+    return normalVec;
+}
+
 void ConsoleDrawer::processRaster(int xp, int yp,
-     const Vec3& lambda, int v0, int v1, int v2, const Vec3& normalVec){
-    Vec3 p0 = modelPositions[v0];
-    Vec3 p1 = modelPositions[v1];
-    Vec3 p2 = modelPositions[v2];
+     const Vec3& lambda, const iVec& poly){
+    Vec3 p0 = modelPositions[poly[0]];
+    Vec3 p1 = modelPositions[poly[1]];
+    Vec3 p2 = modelPositions[poly[2]];
     Vec3 pos{lambda[0]*p0 + lambda[1]*p1 + lambda[2]*p2};
+
+    Vec3 normalVec{calculateNormal(poly, lambda)};    
 
     Vec3 eyeVec = -pos;
     eyeVec.normalize();
@@ -81,7 +89,7 @@ void ConsoleDrawer::processRaster(int xp, int yp,
 
     double specular = dot(normalVec, h);
     double spec = 1;
-    for (int i{0}; i<12; ++i){
+    for (int i{0}; i<2; ++i){
         spec*= specular;
     }
     int L = static_cast<int>(12*(kd*diffuse + ks*spec));
@@ -98,33 +106,17 @@ void ConsoleDrawer::processRaster(int xp, int yp,
     }
 }
 
-bool ConsoleDrawer::backFaceCull(const Vec3& normalVec){
 
-    
-    return dot(Vec3{0,0,1}, normalVec) < 0;
-}
-
-void ConsoleDrawer::rasterizeTriangle(int v0, int v1, int v2, const std::vector<Vec3>& pVecs){
-
-    Vec3 p0 = modelPositions[v0];
-    Vec3 p1 = modelPositions[v1];
-    Vec3 p2 = modelPositions[v2];
-    Vec3 normalVec = normal(p1-p0, p2-p0);
-    normalVec.normalize();
-
-    // if (backFaceCull(normalVec)){
-    //     return;
-    // }
-    Vec3 a = pVecs[v0];
-    Vec3 b = pVecs[v1];
-    Vec3 c = pVecs[v2];
+void ConsoleDrawer::rasterizeTriangle(const iVec& poly){
+    Vec3 a = screenVertices[poly[0]];
+    Vec3 b = screenVertices[poly[1]];
+    Vec3 c = screenVertices[poly[2]];
 
     auto l0 = makeLine(a,b);
     auto l1 = makeLine(b,c);
     auto l2 = makeLine(c,a);
 
     double e0, e1, e2, e0t, e1t, e2t;
-
 
     int bbXMin = static_cast<int>(min(b[0], min(a[0], c[0])));
     int bbXMax = static_cast<int>(max(a[0], max(b[0], c[0])));
@@ -141,8 +133,7 @@ void ConsoleDrawer::rasterizeTriangle(int v0, int v1, int v2, const std::vector<
         for (int x=bbXMin; x<= bbXMax; ++x){
             if (e0<0 == e1 < 0 && e0<0 ==e2 < 0){
                 Vec3 lambda{e1/area, e2/area,e0/area};
-
-                processRaster(x,y,lambda,v0, v1,v2, normalVec);
+                processRaster(x,y,lambda,poly);
             }
             e0 += l0[0];
             e1 += l1[0];
@@ -152,33 +143,46 @@ void ConsoleDrawer::rasterizeTriangle(int v0, int v1, int v2, const std::vector<
         e1 = e1t + l1[1];
         e2 = e2t + l2[1];
     }
+}
 
 
+void ConsoleDrawer::writeBuffer(){
+    screenBuffer[screenWidth*screenHeight - 1] = '\0';
+    WriteConsoleOutputCharacterW(hConsole, screenBuffer, screenWidth*screenHeight, {0,0}, &dwBytesWritten);
+}
+
+void ConsoleDrawer::transformVertices(const Mat4& totalMatrix, const Mat4& modelMatrix){
+    for(const auto& vertex: vertexVector){
+        modelPositions.push_back(matmul(modelMatrix, vertex));
+        Vec4 pVec = matmul(totalMatrix, vertex);
+        pVec /= pVec[3];
+        double x = screenWidth/2 - pVec[0]*screenWidth;
+        double y = screenHeight/2 - pVec[1]*screenHeight;
+        screenVertices.push_back(Vec3{x,y, pVec[2]});
+    }
 }
 
 
 constexpr double pi = 3.141592;
 void ConsoleDrawer::drawLoop(){
     
-
-    
     Mat4 scaleMatrix{
-        3.0,.0,.0,.0,
-        .0, 3.0,.0, 0.,
-        .0,.0, 3.0, 0,
+        30.0,.0,.0,.0,
+        .0, 30.0,.0, 0.,
+        .0,.0, 30.0, 0,
         .0,.0,.0,1.0
     };
     Mat4 translationMatrix{
             1.0,.0,.0,.0,
-            .0,1.0,.0, -3,
+            .0,1.0,.0, -5,
             .0,.0,1.0, 10,
             .0,.0,.0,1.0
         };
 
     Mat4 camRotation{
         1.0, 0.0, 0.0, 0.0,
-        0.0, cos(-10.0*pi/180), -sin(-10.0*pi/180), 0.0,
-        0.0, sin(-10.0*pi/180), cos(-10.0*pi/180), 0.0,
+        0.0, cos(-20.0*pi/180), -sin(-20.0*pi/180), 0.0,
+        0.0, sin(-20.0*pi/180), cos(-20.0*pi/180), 0.0,
         0.0, 0.0, 0.0, 1.0
     };
 
@@ -200,7 +204,7 @@ void ConsoleDrawer::drawLoop(){
         std::chrono::duration<double> diff = p2 - p1;
         double elapsedTime = diff.count();
         p1 = p2;
-        theta = theta< 2*pi ? theta + 0.3*elapsedTime : 0.0;
+        theta = theta< 2*pi ? theta + 0.1*elapsedTime : 0.0;
 
 
         Mat4 rotationMatrix{
@@ -210,25 +214,14 @@ void ConsoleDrawer::drawLoop(){
             0.0, 0.0, 0.0, 1.0
         };
 
-        Mat4 modelMatrix = translationMatrix* rotationMatrix;
+        Mat4 modelMatrix = translationMatrix* rotationMatrix*scaleMatrix;
         Mat4 totalMatrix = perspectiveMatrix*modelMatrix;
-        std::vector<Vec3> vertices;
-        for(auto& vertex: vertexVector){
-            Vec4 pVec = matmul(totalMatrix, vertex);
-            modelPositions.push_back(matmul(modelMatrix, vertex));
-            double z = pVec[3];
-            pVec /= pVec[3];
-            double x = screenWidth/2 - pVec[0]*screenWidth;
-            double y = screenHeight/3 - pVec[1]*screenHeight;
-            vertices.push_back(Vec3{x,y, z});
-        }
+
+        transformVertices(totalMatrix, modelMatrix);
 
         for(const auto& poly : polygons){
-            rasterizeTriangle(poly[0], poly[1], poly[2], vertices);
+            rasterizeTriangle(poly);
         }
-
-
-        screenBuffer[screenWidth*screenHeight - 1] = '\0';
-        WriteConsoleOutputCharacterW(hConsole, screenBuffer, screenWidth*screenHeight, {0,0}, &dwBytesWritten);
+        writeBuffer();
     }
 }
