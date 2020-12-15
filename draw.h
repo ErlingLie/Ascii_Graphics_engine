@@ -29,19 +29,21 @@ protected:
     double ks;
 
     virtual void resetBuffers();
+
     virtual void processRaster(int xp, int yp,
-        const Linalg::Vec3& lambda, iVec poly);
-    void rasterizeTriangle(iVec poly);
+        const Linalg::Vec3& lambda, const iVec& poly);
+
+    void rasterizeTriangle(const iVec& poly);
+
+    virtual Linalg::Vec3 calculateNormal(const iVec& poly, const Linalg::Vec3& lambda);
+
     void transformVertices(const Linalg::Mat4& totalMatrix, const Linalg::Mat4& modelMatrix);
 
-    Linalg::Vec3 makeLine(Linalg::Vec3 a, Linalg::Vec3 b);
+    Linalg::Vec3 makeLine(const Linalg::Vec3& a, const Linalg::Vec3& b);
 
     void writeBuffer();
 public:
     ConsoleDrawer(int width, int height);
-
-    
-
     virtual void drawLoop();
 
     ~ConsoleDrawer(){

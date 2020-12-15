@@ -2,7 +2,6 @@
 #include "linalg.h"
 #include <chrono>
 
-#include "objreader.h"
 
 using namespace Linalg;
 
@@ -54,27 +53,35 @@ void ConsoleDrawer::resetBuffers(){
     screenVertices = std::vector<Vec3>{};
 }
 
-Vec3 ConsoleDrawer::makeLine(Vec3 a, Vec3 b){
+Vec3 ConsoleDrawer::makeLine(const Vec3& a, const Vec3& b){
     Vec3 diff{ b[1] - a[1], a[0] - b[0], 0};
     diff[2] = -diff[0]*a[0] - diff[1]*a[1];
     return diff;
 }
 
+Linalg::Vec3 ConsoleDrawer::calculateNormal(const iVec& poly, const Linalg::Vec3& lambda){
+    Vec3 p0 = modelPositions[poly[0]];
+    Vec3 p1 = modelPositions[poly[1]];
+    Vec3 p2 = modelPositions[poly[2]];
+    Vec3 normalVec = normal(p1-p0, p2-p0);
+    normalVec.normalize();
+    return normalVec;
+}
+
 void ConsoleDrawer::processRaster(int xp, int yp,
-     const Vec3& lambda, iVec poly){
+     const Vec3& lambda, const iVec& poly){
     Vec3 p0 = modelPositions[poly[0]];
     Vec3 p1 = modelPositions[poly[1]];
     Vec3 p2 = modelPositions[poly[2]];
     Vec3 pos{lambda[0]*p0 + lambda[1]*p1 + lambda[2]*p2};
 
-    Vec3 normalVec = normal(p1-p0, p2-p0);
-    normalVec.normalize();
+    Vec3 normalVec{calculateNormal(poly, lambda)};    
 
     Vec3 eyeVec = -pos;
     eyeVec.normalize();
 
 
-    double diffuse = max(dot(normalVec, lightDirection), 0.0);
+    double diffuse = max(dot(normalVec, -lightDirection), 0.0);
 
 
     Vec3 h = (-lightDirection + eyeVec)*0.5;
@@ -83,7 +90,7 @@ void ConsoleDrawer::processRaster(int xp, int yp,
 
     double specular = dot(normalVec, h);
     double spec = 1;
-    for (int i{0}; i<12; ++i){
+    for (int i{0}; i<2; ++i){
         spec*= specular;
     }
     int L = static_cast<int>(12*(kd*diffuse + ks*spec));
@@ -101,7 +108,7 @@ void ConsoleDrawer::processRaster(int xp, int yp,
 }
 
 
-void ConsoleDrawer::rasterizeTriangle(iVec poly){
+void ConsoleDrawer::rasterizeTriangle(const iVec& poly){
     Vec3 a = screenVertices[poly[0]];
     Vec3 b = screenVertices[poly[1]];
     Vec3 c = screenVertices[poly[2]];
@@ -137,8 +144,6 @@ void ConsoleDrawer::rasterizeTriangle(iVec poly){
         e1 = e1t + l1[1];
         e2 = e2t + l2[1];
     }
-
-
 }
 
 
@@ -153,7 +158,7 @@ void ConsoleDrawer::transformVertices(const Mat4& totalMatrix, const Mat4& model
         Vec4 pVec = matmul(totalMatrix, vertex);
         pVec /= pVec[3];
         double x = screenWidth/2 - pVec[0]*screenWidth;
-        double y = screenHeight/3 - pVec[1]*screenHeight;
+        double y = screenHeight/2 - pVec[1]*screenHeight;
         screenVertices.push_back(Vec3{x,y, pVec[2]});
     }
 }
@@ -163,22 +168,22 @@ constexpr double pi = 3.141592;
 void ConsoleDrawer::drawLoop(){
     
     Mat4 scaleMatrix{
-        3.0,.0,.0,.0,
-        .0, 3.0,.0, 0.,
-        .0,.0, 3.0, 0,
+        30.0,.0,.0,.0,
+        .0, 30.0,.0, 0.,
+        .0,.0, 30.0, 0,
         .0,.0,.0,1.0
     };
     Mat4 translationMatrix{
             1.0,.0,.0,.0,
-            .0,1.0,.0, -3,
+            .0,1.0,.0, -5,
             .0,.0,1.0, 10,
             .0,.0,.0,1.0
         };
 
     Mat4 camRotation{
         1.0, 0.0, 0.0, 0.0,
-        0.0, cos(-10.0*pi/180), -sin(-10.0*pi/180), 0.0,
-        0.0, sin(-10.0*pi/180), cos(-10.0*pi/180), 0.0,
+        0.0, cos(-20.0*pi/180), -sin(-20.0*pi/180), 0.0,
+        0.0, sin(-20.0*pi/180), cos(-20.0*pi/180), 0.0,
         0.0, 0.0, 0.0, 1.0
     };
 
@@ -210,7 +215,7 @@ void ConsoleDrawer::drawLoop(){
             0.0, 0.0, 0.0, 1.0
         };
 
-        Mat4 modelMatrix = translationMatrix* rotationMatrix;
+        Mat4 modelMatrix = translationMatrix* rotationMatrix*scaleMatrix;
         Mat4 totalMatrix = perspectiveMatrix*modelMatrix;
 
         transformVertices(totalMatrix, modelMatrix);
