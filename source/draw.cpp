@@ -11,14 +11,10 @@ screenWidth{width},
 screenHeight{height},
 screenBuffer{new wchar_t[screenHeight*screenWidth]},
 zBuffer{new double[screenHeight*screenWidth]},
-hConsole{CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, nullptr, CONSOLE_TEXTMODE_BUFFER, nullptr)},
-dwBytesWritten{0},
 lightDirection{1, -10, 5},
 kd{0.8},
 ks{1-kd}
 {
-    SetConsoleActiveScreenBuffer(hConsole);
-
     // vertexVector = std::vector<Vec4>{Vec4{1.0, 1.0, 1.0},
     //                      Vec4{1.0, 1.0, -1.0},
     //                      Vec4{1.0, -1.0, 1.0},
@@ -81,7 +77,7 @@ void ConsoleDrawer::processRaster(int xp, int yp,
     eyeVec.normalize();
 
 
-    double diffuse = max(dot(normalVec, -lightDirection), 0.0);
+    double diffuse = std::max(dot(normalVec, -lightDirection), 0.0);
 
     Vec3 h = (-lightDirection + eyeVec)*0.5;
     h.normalize();
@@ -118,10 +114,10 @@ void ConsoleDrawer::rasterizeTriangle(const iVec& poly){
 
     double e0, e1, e2, e0t, e1t, e2t;
 
-    int bbXMin = static_cast<int>(min(b[0], min(a[0], c[0])));
-    int bbXMax = static_cast<int>(max(a[0], max(b[0], c[0])));
-    int bbYMin = static_cast<int>(min(a[1], min(b[1], c[1])));
-    int bbYMax = static_cast<int>(max(a[1], max(b[1], c[1])));
+    int bbXMin = static_cast<int>(std::min(b[0], std::min(a[0], c[0])));
+    int bbXMax = static_cast<int>(std::max(a[0], std::max(b[0], c[0])));
+    int bbYMin = static_cast<int>(std::min(a[1], std::min(b[1], c[1])));
+    int bbYMax = static_cast<int>(std::max(a[1], std::max(b[1], c[1])));
     double area = (l1[0]*a[0] + l1[1]*a[1] + l1[2]);
 
     e0 = l0[0]*bbXMin + l0[1]*bbYMin + l0[2];
@@ -131,7 +127,7 @@ void ConsoleDrawer::rasterizeTriangle(const iVec& poly){
     for (int y=bbYMin; y<=bbYMax; ++y){
         e0t = e0; e1t = e1; e2t = e2;
         for (int x=bbXMin; x<= bbXMax; ++x){
-            if (e0<0 == e1 < 0 && e0<0 ==e2 < 0){
+            if ((e0<0) == (e1 < 0) && (e0<0) == (e2 < 0)){
                 Vec3 lambda{e1/area, e2/area,e0/area};
                 processRaster(x,y,lambda,poly);
             }
@@ -147,8 +143,13 @@ void ConsoleDrawer::rasterizeTriangle(const iVec& poly){
 
 
 void ConsoleDrawer::writeBuffer(){
-    screenBuffer[screenWidth*screenHeight - 1] = '\0';
-    WriteConsoleOutputCharacterW(hConsole, screenBuffer, screenWidth*screenHeight, {0,0}, &dwBytesWritten);
+    printf("\x1b[H");
+    for (int j = 0; j < screenHeight; j++) {
+        for (int i = 0; i < screenWidth; i++) {
+        putchar(screenBuffer[i + j*screenWidth]);
+        }
+        putchar('\n');
+    }
 }
 
 void ConsoleDrawer::transformVertices(const Mat4& totalMatrix, const Mat4& modelMatrix){

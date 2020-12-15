@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
 namespace Linalg{
 class Vec4 {
 private:

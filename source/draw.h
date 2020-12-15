@@ -1,7 +1,6 @@
 #ifndef DRAW_H
 #define DRAW_H
 
-#include <Windows.h>
 #include "linalg.h"
 #include <vector>
 
@@ -13,9 +12,6 @@ protected:
     int screenHeight;
     wchar_t* screenBuffer;
     double* zBuffer;
-
-    HANDLE hConsole;
-    DWORD dwBytesWritten;
 
     std::vector<Linalg::Vec4> vertexVector;
     std::vector<iVec> polygons;
