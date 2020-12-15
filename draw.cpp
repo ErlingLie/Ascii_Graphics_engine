@@ -33,27 +33,17 @@ ks{1-kd}
     //                     iVec{0,2,5}, iVec{0,5,3}, iVec{4,5,7}, iVec{4,3,5}};
 
 
-    // vertexVector = std::vector<Vec4>{Vec4{1.0, -1.0, 1.0},
-    //                      Vec4{-1.0, -1.0, 1.0},
-    //                      Vec4{1.0, -1.0, -1.0},
-    //                      Vec4{-1.0, -1.0, -1.0},
-    //                      Vec4{0, 1.0, 0}};
-    // polygons = std::vector<iVec>{iVec{0, 3, 2}, iVec{0, 1, 3},
-    //                                 iVec{2, 3, 4}, iVec{0, 2, 4},
-    //                                 iVec{1, 4, 3}, iVec{0, 4, 1}};
+    vertexVector = std::vector<Vec4>{Vec4{1.0, -1.0, 1.0},
+                         Vec4{-1.0, -1.0, 1.0},
+                         Vec4{1.0, -1.0, -1.0},
+                         Vec4{-1.0, -1.0, -1.0},
+                         Vec4{0, 1.0, 0}};
+    polygons = std::vector<iVec>{iVec{0, 3, 2}, iVec{0, 1, 3},
+                                    iVec{2, 3, 4}, iVec{0, 2, 4},
+                                    iVec{1, 4, 3}, iVec{0, 4, 1}};
         // polygons = std::vector<iVec>{iVec{0, 2, 3}, iVec{0, 3, 1},
         //                             iVec{2, 4, 3}, iVec{0, 4, 2},
         //                             iVec{1, 3, 4}, iVec{0, 1, 4}};
-    // for (auto& v : polygons){
-    //     Vec3 n = normal(vertexVector[v[1]]-vertexVector[v[0]],
-    //                      vertexVector[v[2]]-vertexVector[v[0]]);
-        // n.normalize();
-        // std::cout << n[0] << " " << n[1] << " " << n[2] << "\n";
-    // }
-
-    // Object3d reader{"f16.obj"};
-    // vertexVector = reader.vertices;
-    // polygons = reader.polygons;
     lightDirection.normalize();
 }
 
@@ -83,10 +73,9 @@ void ConsoleDrawer::processRaster(int xp, int yp,
     eyeVec.normalize();
 
 
-    double diffuse = max(dot(normalVec, lightDirection), 0.0);
+    double diffuse = max(dot(normalVec, -lightDirection), 0.0);
 
-
-    Vec3 h = (-lightDirection + pos)*0.5;
+    Vec3 h = (-lightDirection + eyeVec)*0.5;
     h.normalize();
     
 
@@ -198,7 +187,7 @@ void ConsoleDrawer::drawLoop(){
         0.0, 1.0, 0.0, 0.0,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 1.0, 0.0
-    };//*camRotation;
+    }*camRotation;
 
     auto p1 = std::chrono::system_clock::now();
     auto p2 = std::chrono::system_clock::now();

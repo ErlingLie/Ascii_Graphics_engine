@@ -28,7 +28,7 @@ void DrawObject::processRaster(int xp, int yp,
     double diffuse = max(dot(normalVec, -lightDirection), 0.0);
 
 
-    Vec3 h = (-lightDirection + pos)*0.5;
+    Vec3 h = (-lightDirection + eyeVec)*0.5;
     h.normalize();
     
 
