@@ -148,7 +148,7 @@ void ConsoleDrawer::writeBuffer(){
 }
 
 void ConsoleDrawer::transformVertices(const Mat4& totalMatrix, const Mat4& modelMatrix){
-    for(auto& vertex: vertexVector){
+    for(const auto& vertex: vertexVector){
         modelPositions.push_back(matmul(modelMatrix, vertex));
         Vec4 pVec = matmul(totalMatrix, vertex);
         pVec /= pVec[3];
