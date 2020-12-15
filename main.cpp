@@ -2,8 +2,8 @@
 #include "drawObj.h"
 
 int main(){
-    DrawObject c{};
-    //ConsoleDrawer c{};
+    //ConsoleDrawer c{200, 100};
+    DrawObject c{200, 100, "f16.obj"};
     c.drawLoop();
 
 }

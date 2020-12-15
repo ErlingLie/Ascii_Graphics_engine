@@ -20,31 +20,29 @@ protected:
     std::vector<Linalg::Vec4> vertexVector;
     std::vector<iVec> polygons;
 
-    // std::vector<Linalg::Vec4> pyramid;
-    // std::vector<iVec> pyramidPolygons;
-
     std::vector<Linalg::Vec4> modelPositions;
+    std::vector<Linalg::Vec3> screenVertices;
 
     Linalg::Vec3 lightDirection;
 
-
     double kd;
     double ks;
-    
 
-    void resetBuffers();
-    bool backFaceCull(const Linalg::Vec3& normalVec);
-    void processRaster(int xp, int yp,
-    const Linalg::Vec3& lambda, int v0, int v1, int v2, const Linalg::Vec3& normalVec);
-    void rasterizeTriangle(int a, int b, int c, const std::vector<Linalg::Vec3>&);
+    virtual void resetBuffers();
+    virtual void processRaster(int xp, int yp,
+        const Linalg::Vec3& lambda, iVec poly);
+    void rasterizeTriangle(iVec poly);
+    void transformVertices(const Linalg::Mat4& totalMatrix, const Linalg::Mat4& modelMatrix);
 
     Linalg::Vec3 makeLine(Linalg::Vec3 a, Linalg::Vec3 b);
+
+    void writeBuffer();
 public:
-    ConsoleDrawer();
+    ConsoleDrawer(int width, int height);
 
     
 
-    void drawLoop();
+    virtual void drawLoop();
 
     ~ConsoleDrawer(){
         delete[] zBuffer;
