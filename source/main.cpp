@@ -1,5 +1,6 @@
 #include "draw.h"
 #include "drawObj.h"
+#include <signal.h>
 
 #ifdef __unix__
     #include <sys/ioctl.h>
@@ -8,6 +9,12 @@
     #include <windows.h>
 #endif
 
+
+void my_handler(int s){
+    //Shows cursor again
+    printf("\e[?25h");
+    exit(1);
+}
 int main(int argc, char* argv[]){
     int columns, rows;
 
@@ -22,8 +29,13 @@ int main(int argc, char* argv[]){
         columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
         rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
     #endif
-
+    signal (SIGINT,my_handler);
     //ConsoleDrawer c{200, 100};
-    DrawObject c{rows, columns, "bunny.obj"};
+
+    //Remove cursor
+    printf("\e[?25l");
+
+    //Run Program
+    DrawObject c{rows, columns, "f16.obj"};
     c.drawLoop();
 }

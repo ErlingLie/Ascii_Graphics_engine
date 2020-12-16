@@ -35,7 +35,7 @@ void DrawObject::transformVertices(const Mat4& totalMatrix,
 constexpr double pi = 3.141592;
 void DrawObject::drawLoop(){
     
-    double scale = 30.0;
+    double scale = 3.9;
     Mat4 scaleMatrix{
         scale,.0,.0,.0,
         .0, scale,.0, 0.,
