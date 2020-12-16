@@ -36,6 +36,6 @@ int main(int argc, char* argv[]){
     printf("\e[?25l");
 
     //Run Program
-    DrawObject c{rows, columns, "f16.obj"};
+    DrawObject c{rows, columns, "object_files/armadillo.obj"};
     c.drawLoop();
 }

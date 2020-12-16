@@ -6,7 +6,7 @@ OBJ := $(patsubst $(SOURCE_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
 
 
 CXX := g++
-CXXFLAGS := -O0 -g3 -Wall -Werror -I$(SOURCE_DIR)
+CXXFLAGS := -O3 -g3 -Wall -Werror -I$(SOURCE_DIR)
 LDFLAGS := -L$(BUILD_DIR)
 
 .DEFAULT_GOAL := executable

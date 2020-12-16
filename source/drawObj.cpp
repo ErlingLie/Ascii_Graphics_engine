@@ -35,7 +35,7 @@ void DrawObject::transformVertices(const Mat4& totalMatrix,
 constexpr double pi = 3.141592;
 void DrawObject::drawLoop(){
     
-    double scale = 3.9;
+    double scale = 2;
     Mat4 scaleMatrix{
         scale,.0,.0,.0,
         .0, scale,.0, 0.,
@@ -70,7 +70,7 @@ void DrawObject::drawLoop(){
     double theta = 0;
 
     double fps = 60.0;
-    double low_pass_alpha = 0.99;
+    double low_pass_alpha = 0.9;
     while (true){
         resetBuffers();
         p2 = std::chrono::system_clock::now();
