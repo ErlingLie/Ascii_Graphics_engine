@@ -143,8 +143,8 @@ void ConsoleDrawer::rasterizeTriangle(const iVec& poly){
 
 
 void ConsoleDrawer::writeBuffer(){
-    printf("\x1b[H");
-    for (int j = 0; j < screenHeight; j++) {
+    putchar('\x1b'); putchar('['); putchar('H');
+    for (int j = 0; j < screenHeight-1; j++) {
         for (int i = 0; i < screenWidth; i++) {
         putchar(screenBuffer[i + j*screenWidth]);
         }

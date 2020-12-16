@@ -45,12 +45,12 @@ void DrawObject::drawLoop(){
 
     Mat4 translationMatrix{
             1.0,.0,.0,.0,
-            .0,1.0,.0, -3,
+            .0,1.0,.0, -8,
             .0,.0,1.0, 10,
             .0,.0,.0,1.0
         };
 
-    const double viewAngle = -10;
+    const double viewAngle = -35;
     Mat4 camRotation{
         1.0, 0.0, 0.0, 0.0,
         0.0, cos(viewAngle*pi/180), -sin(viewAngle*pi/180), 0.0,
@@ -68,12 +68,17 @@ void DrawObject::drawLoop(){
     auto p1 = std::chrono::system_clock::now();
     auto p2 = std::chrono::system_clock::now();
     double theta = 0;
+
+    double fps = 60.0;
+    double low_pass_alpha = 0.99;
     while (true){
         resetBuffers();
-
         p2 = std::chrono::system_clock::now();
         std::chrono::duration<double> diff = p2 - p1;
         double elapsedTime = diff.count();
+        fps = low_pass_alpha*fps + (1-low_pass_alpha)*1/elapsedTime;
+        printf("\033]0; Asci graphics (FPS: %.2f)\007", fps);
+
         p1 = p2;
         theta = theta< 2*pi ? theta + 0.3*elapsedTime : 0.0;
 

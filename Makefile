@@ -12,8 +12,6 @@ LDFLAGS := -L$(BUILD_DIR)
 .DEFAULT_GOAL := executable
 
 executable : $(OBJ)
-	@echo $(SOURCES)
-	@echo $^
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BUILD_DIR) :
